@@ -11,8 +11,11 @@ public class UnitConverter {
     private static final double LITER_TO_IMP_GALLON = 1.0 / 4.54609;
     private static final double LITER_TO_US_PINT = 1.0 / 0.473176473;
     private static final double LITER_TO_IMP_PINT = 1.0 / 0.56826125;
+    private static final double MPH_TO_KMH = 1.609344;
+    private static final double YARD_TO_M = 0.9144;
+    private static final double OZ_TO_G = 28.349523125;
 
-    enum Category { LENGTH, WEIGHT, TEMPERATURE, VOLUME }
+    enum Category { LENGTH, WEIGHT, TEMPERATURE, VOLUME, CURRENCY, SPEED }
 
     static class Option {
         final String label; final Runnable action;
@@ -24,10 +27,12 @@ public class UnitConverter {
         println("🇬🇧  Java Unit Converter (UK + US friendly)\n");
 
         Map<Integer, Option> main = new LinkedHashMap<>();
-        main.put(1, new Option("Length (mi/km, ft/m, in/cm)", () -> lengthMenu(sc)));
-        main.put(2, new Option("Weight (lb/kg, stone/kg)",  () -> weightMenu(sc)));
+        main.put(1, new Option("Length (mi/km, ft/m, in/cm, yd/m)", () -> lengthMenu(sc)));
+        main.put(2, new Option("Weight (lb/kg, stone/kg, oz/g)",  () -> weightMenu(sc)));
         main.put(3, new Option("Temperature (°C/°F)",       () -> temperatureMenu(sc)));
         main.put(4, new Option("Volume (L, US/Imp gal & pint)", () -> volumeMenu(sc)));
+        main.put(5, new Option("Currency (USD ↔ GBP)", () -> currencyMenu(sc)));
+        main.put(6, new Option("Speed (mph ↔ km/h)", () -> speedMenu(sc)));
         main.put(0, new Option("Exit", () -> { println("Thank you! Happy travels! ✈️"); System.exit(0); }));
 
         while (true) {
@@ -59,6 +64,12 @@ public class UnitConverter {
         m.put(6, new Option("Centimeters → Inches", () ->
             convertLoop(sc, "centimeters", "inches", v -> v / INCH_TO_CM)
         ));
+        m.put(7, new Option("Yards → Meters", () ->
+            convertLoop(sc, "yards", "meters", v -> v * YARD_TO_M)
+        ));
+        m.put(8, new Option("Meters → Yards", () ->
+            convertLoop(sc, "meters", "yards", v -> v / YARD_TO_M)
+        ));
         m.put(0, new Option("Back", () -> {}));
         subLoop(sc, "Length", m);
     }
@@ -76,6 +87,12 @@ public class UnitConverter {
         ));
         m.put(4, new Option("Kilograms → Stone",  () ->
             convertLoop(sc, "kilograms", "stone", v -> (v / LB_TO_KG) / STONE_TO_LB)
+        ));
+        m.put(5, new Option("Ounces(oz) → Grams(g)", () ->
+            convertLoop(sc, "ounces", "grams", v -> v * OZ_TO_G)
+        ));
+        m.put(6, new Option("Grams(g) → Ounces(oz)", () ->
+            convertLoop(sc, "grams", "ounces", v -> v / OZ_TO_G)
         ));
         m.put(0, new Option("Back", () -> {}));
         subLoop(sc, "Weight", m);
@@ -141,6 +158,33 @@ public class UnitConverter {
         ));
         m.put(0, new Option("Back", () -> {}));
         subLoop(sc, "Volume", m);
+    }
+
+    private static void currencyMenu(Scanner sc) {
+        println("\n- Currency -");
+        double rate = readDouble(sc, "Enter current exchange rate (1 USD = ? GBP): ");
+
+        Map<Integer, Option> m = new LinkedHashMap<>();
+        m.put(1, new Option("USD($) → GBP(£)", () ->
+            convertLoop(sc, "USD", "GBP", v -> v * rate)
+        ));
+        m.put(2, new Option("GBP(£) → USD($)", () ->
+            convertLoop(sc, "GBP", "USD", v -> v / rate)
+        ));
+        m.put(0, new Option("Back", () -> {}));
+        subLoop(sc, "Currency", m);
+    }
+
+    private static void speedMenu(Scanner sc) {
+        Map<Integer, Option> m = new LinkedHashMap<>();
+        m.put(1, new Option("Miles/hour(mph) → Kilometers/hour(km/h)", () ->
+            convertLoop(sc, "mph", "km/h", v -> v * MPH_TO_KMH)
+        ));
+        m.put(2, new Option("Kilometers/hour(km/h) → Miles/hour(mph)", () ->
+            convertLoop(sc, "km/h", "mph", v -> v / MPH_TO_KMH)
+        ));
+        m.put(0, new Option("Back", () -> {}));
+        subLoop(sc, "Speed", m);
     }
 
     // Helpers
