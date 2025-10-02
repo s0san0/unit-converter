@@ -28,7 +28,7 @@ public class UnitConverter {
         main.put(2, new Option("Weight (lb/kg, stone/kg)",  () -> weightMenu(sc)));
         main.put(3, new Option("Temperature (°C/°F)",       () -> temperatureMenu(sc)));
         main.put(4, new Option("Volume (L, US/Imp gal & pint)", () -> volumeMenu(sc)));
-        main.put(0, new Option("Exit", () -> { println("Thank you! Happy travels!"); System.exit(0); }));
+        main.put(0, new Option("Exit", () -> { println("Thank you! Happy travels! ✈️"); System.exit(0); }));
 
         while (true) {
             printMenu("Main Menu", main);
@@ -41,47 +41,73 @@ public class UnitConverter {
     // Menus
     private static void lengthMenu(Scanner sc) {
         Map<Integer, Option> m = new LinkedHashMap<>();
-        m.put(1, new Option("Miles -> Kilometers", () -> convert(sc, "miles", "kilometers", MILES_TO_KM)));
-        m.put(2, new Option("Kilometers -> Miles", () -> convert(sc, "kilometers", "miles", 1.0 / MILES_TO_KM)));
-        m.put(3, new Option("Feet -> Meters",      () -> convert(sc, "feet", "meters", FOOT_TO_M)));
-        m.put(4, new Option("Meters -> Feet",      () -> convert(sc, "meters", "feet", 1.0 / FOOT_TO_M)));
-        m.put(5, new Option("Inches -> Centimeters", () -> convert(sc, "inches", "centimeters", INCH_TO_CM)));
-        m.put(6, new Option("Centimeters -> Inches", () -> convert(sc, "centimeters", "inches", 1.0 / INCH_TO_CM)));
+        m.put(1, new Option("Miles → Kilometers", () ->
+            convertLoop(sc, "miles", "kilometers", v -> v * MILES_TO_KM)
+        ));
+        m.put(2, new Option("Kilometers → Miles", () ->
+            convertLoop(sc, "kilometers", "miles", v -> v / MILES_TO_KM)
+        ));
+        m.put(3, new Option("Feet → Meters",      () ->
+            convertLoop(sc, "feet", "meters", v -> v * FOOT_TO_M)
+        ));
+        m.put(4, new Option("Meters → Feet",      () ->
+            convertLoop(sc, "meters", "feet", v -> v / FOOT_TO_M)
+        ));
+        m.put(5, new Option("Inches → Centimeters", () ->
+            convertLoop(sc, "inches", "centimeters", v -> v * INCH_TO_CM)
+        ));
+        m.put(6, new Option("Centimeters → Inches", () ->
+            convertLoop(sc, "centimeters", "inches", v -> v / INCH_TO_CM)
+        ));
         m.put(0, new Option("Back", () -> {}));
         subLoop(sc, "Length", m);
     }
 
     private static void weightMenu(Scanner sc) {
         Map<Integer, Option> m = new LinkedHashMap<>();
-        m.put(1, new Option("Pounds -> Kilograms", () -> convert(sc, "pounds", "kilograms", LB_TO_KG)));
-        m.put(2, new Option("Kilograms -> Pounds", () -> convert(sc, "kilograms", "pounds", 1.0 / LB_TO_KG)));
-        m.put(3, new Option("Stone -> Kilograms",  () -> {
-            double stone = readDouble(sc, "Enter stone: ");
-            double lbs = stone * STONE_TO_LB;
-            double kg = lbs * LB_TO_KG;
-            println(fmt(stone) + " stone = " + fmt(kg) + " kilograms");
-        }));
-        m.put(4, new Option("Kilograms -> Stone",  () -> {
-            double kg = readDouble(sc, "Enter kilograms: ");
-            double lbs = kg / LB_TO_KG;
-            double stone = lbs / STONE_TO_LB;
-            println(fmt(kg) + " kilograms = " + fmt(stone) + " stone");
-        }));
+        m.put(1, new Option("Pounds → Kilograms", () ->
+            convertLoop(sc, "pounds", "kilograms", v -> v * LB_TO_KG)
+        ));
+        m.put(2, new Option("Kilograms → Pounds", () ->
+            convertLoop(sc, "kilograms", "pounds", v -> v / LB_TO_KG)
+        ));
+        m.put(3, new Option("Stone → Kilograms",  () ->
+            convertLoop(sc, "stone", "kilograms", v -> (v * STONE_TO_LB) * LB_TO_KG)
+        ));
+        m.put(4, new Option("Kilograms → Stone",  () ->
+            convertLoop(sc, "kilograms", "stone", v -> (v / LB_TO_KG) / STONE_TO_LB)
+        ));
         m.put(0, new Option("Back", () -> {}));
         subLoop(sc, "Weight", m);
     }
 
     private static void temperatureMenu(Scanner sc) {
         Map<Integer, Option> m = new LinkedHashMap<>();
-        m.put(1, new Option("Celsius -> Fahrenheit", () -> {
-            double c = readDouble(sc, "Enter °C: ");
-            double f = c * 9.0/5.0 + 32.0;
-            println(fmt(c) + " °C = " + fmt(f) + " °F");
+        m.put(1, new Option("Celsius(°C) → Fahrenheit(°F)", () -> {
+            while (true) {
+                String raw = readLine(sc, "Enter °C (or 'b' to go back): ");
+                if (raw.equalsIgnoreCase("b")) return;
+                try {
+                    double c = Double.parseDouble(raw);
+                    double f = c * 9.0/5.0 + 32.0;
+                    println(fmt(c) + " °C = " + fmt(f) + " °F");
+                } catch (NumberFormatException e) {
+                    println("Please enter a valid number or 'b' to go back.");
+                }
+            }
         }));
-        m.put(2, new Option("Fahrenheit -> Celsius", () -> {
-            double f = readDouble(sc, "Enter °F: ");
-            double c = (f - 32.0) * 5.0/9.0;
-            println(fmt(f) + " °F = " + fmt(c) + " °C");
+        m.put(2, new Option("Fahrenheit(°F) → Celsius(°C)", () -> {
+            while (true) {
+                String raw = readLine(sc, "Enter °F (or 'b' to go back): ");
+                if (raw.equalsIgnoreCase("b")) return;
+                try {
+                    double f = Double.parseDouble(raw);
+                    double c = (f - 32.0) * 5.0/9.0;
+                    println(fmt(f) + " °F = " + fmt(c) + " °C");
+                } catch (NumberFormatException e) {
+                    println("Please enter a valid number or 'b' to go back.");
+                }
+            }
         }));
         m.put(0, new Option("Back", () -> {}));
         subLoop(sc, "Temperature", m);
@@ -89,14 +115,30 @@ public class UnitConverter {
 
     private static void volumeMenu(Scanner sc) {
         Map<Integer, Option> m = new LinkedHashMap<>();
-        m.put(1, new Option("Liters -> US Gallons",    () -> convert(sc, "liters", "US gallons", LITER_TO_US_GALLON)));
-        m.put(2, new Option("US Gallons -> Liters",    () -> convert(sc, "US gallons", "liters", 1.0 / LITER_TO_US_GALLON)));
-        m.put(3, new Option("Liters -> Imperial Gallons", () -> convert(sc, "liters", "Imperial gallons", LITER_TO_IMP_GALLON)));
-        m.put(4, new Option("Imperial Gallons -> Liters", () -> convert(sc, "Imperial gallons", "liters", 1.0 / LITER_TO_IMP_GALLON)));
-        m.put(5, new Option("Liters -> US Pints",      () -> convert(sc, "liters", "US pints", LITER_TO_US_PINT)));
-        m.put(6, new Option("US Pints -> Liters",      () -> convert(sc, "US pints", "liters", 1.0 / LITER_TO_US_PINT)));
-        m.put(7, new Option("Liters -> Imperial Pints", () -> convert(sc, "liters", "Imperial pints", LITER_TO_IMP_PINT)));
-        m.put(8, new Option("Imperial Pints -> Liters", () -> convert(sc, "Imperial pints", "liters", 1.0 / LITER_TO_IMP_PINT)));
+        m.put(1, new Option("Liters → US Gallons",    () ->
+            convertLoop(sc, "liters", "US gallons", v -> v * LITER_TO_US_GALLON)
+        ));
+        m.put(2, new Option("US Gallons → Liters",    () ->
+            convertLoop(sc, "US gallons", "liters", v -> v / LITER_TO_US_GALLON)
+        ));
+        m.put(3, new Option("Liters → Imperial Gallons", () ->
+            convertLoop(sc, "liters", "Imperial gallons", v -> v * LITER_TO_IMP_GALLON)
+        ));
+        m.put(4, new Option("Imperial Gallons → Liters", () ->
+            convertLoop(sc, "Imperial gallons", "liters", v -> v / LITER_TO_IMP_GALLON)
+        ));
+        m.put(5, new Option("Liters → US Pints",      () ->
+            convertLoop(sc, "liters", "US pints", v -> v * LITER_TO_US_PINT)
+        ));
+        m.put(6, new Option("US Pints → Liters",      () ->
+            convertLoop(sc, "US pints", "liters", v -> v / LITER_TO_US_PINT)
+        ));
+        m.put(7, new Option("Liters → Imperial Pints", () ->
+            convertLoop(sc, "liters", "Imperial pints", v -> v * LITER_TO_IMP_PINT)
+        ));
+        m.put(8, new Option("Imperial Pints → Liters", () ->
+            convertLoop(sc, "Imperial pints", "liters", v -> v / LITER_TO_IMP_PINT)
+        ));
         m.put(0, new Option("Back", () -> {}));
         subLoop(sc, "Volume", m);
     }
@@ -119,7 +161,7 @@ public class UnitConverter {
     }
 
     private static void printMenu(String title, Map<Integer, Option> items) {
-        println("- " + title + " -");
+        println("\n- " + title + " -");
         for (Map.Entry<Integer, Option> e : items.entrySet()) {
             System.out.printf("[%d] %s%n", e.getKey(), e.getValue().label);
         }
@@ -149,10 +191,29 @@ public class UnitConverter {
         }
     }
 
+    private static String readLine(Scanner sc, String prompt) {
+        System.out.print(prompt);
+        return sc.nextLine().trim();
+    }
+
     // friendly formatting w/o scientific notation for typical ranges
     private static String fmt(double d) {
         return String.format(Locale.US, "%,.6f", d).replaceAll("(\\.\\d*?)0+$", "$1").replaceAll("\\.$", "");
     }
 
     private static void println(String s) { System.out.println(s); }
+
+    private static void convertLoop(Scanner sc, String from, String to, java.util.function.DoubleUnaryOperator op) {
+        while (true) {
+            String raw = readLine(sc, "Enter " + from + " (or 'b' to go back): ");
+            if (raw.equalsIgnoreCase("b")) return;
+            try {
+                double v = Double.parseDouble(raw);
+                double out = op.applyAsDouble(v);
+                println(fmt(v) + " " + from + " → " + fmt(out) + " " + to);
+            } catch (NumberFormatException e) {
+                println("Please enter a valid number or 'b' to go back.");
+            }
+        }
+    }
 }
