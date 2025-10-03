@@ -1,4 +1,12 @@
 import java.util.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.net.URI;
+import java.io.IOException;
+import java.text.NumberFormat;
+import java.util.function.DoubleUnaryOperator;
 
 public class UnitConverter {
     // Exact standard constants
@@ -14,6 +22,8 @@ public class UnitConverter {
     private static final double MPH_TO_KMH = 1.609344;
     private static final double YARD_TO_M = 0.9144;
     private static final double OZ_TO_G = 28.349523125;
+    private static final NumberFormat USD_F = NumberFormat.getCurrencyInstance(java.util.Locale.US);
+    private static final NumberFormat GBP_F = NumberFormat.getCurrencyInstance(java.util.Locale.UK);
 
     enum Category { LENGTH, WEIGHT, TEMPERATURE, VOLUME, CURRENCY, SPEED }
 
@@ -40,6 +50,42 @@ public class UnitConverter {
             int choice = readInt(sc, "Choose an option: ");
             runChoice(main, choice);
             println("");
+        }
+    }
+
+    private static Double fetchUsdToGbpRate() {
+        try {
+            HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(5))
+                .build();
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.frankfurter.dev/v1/latest?base=USD&symbols=GBP"))
+                .timeout(Duration.ofSeconds(8))
+                .GET()
+                .build();
+
+            HttpResponse<String> res = client.send(req, HttpResponse.BodyHandlers.ofString());
+            if (res.statusCode() != 200) return null;
+
+            // dependency-free parse
+            String body = res.body();
+            int i = body.indexOf("\"GBP\"");
+            if (i < 0) return null;
+            int colon = body.indexOf(':', i);
+            if (colon < 0) return null;
+
+            // grab number until next non-number char
+            int p = colon + 1;
+            StringBuilder num = new StringBuilder();
+            while (p < body.length()) {
+                char c = body.charAt(p++);
+                if ((c >= '0' && c <= '9') || c == '.' ) num.append(c);
+                else if (num.length() > 0) break;
+            }
+            return num.length() > 0 ? Double.parseDouble(num.toString()) : null;
+        } catch (IOException | InterruptedException e) {
+            return null;    // handles network/timeouts gracefully
         }
     }
 
@@ -162,8 +208,24 @@ public class UnitConverter {
 
     private static void currencyMenu(Scanner sc) {
         println("\n- Currency -");
-        double rate = readDouble(sc, "Enter current exchange rate (1 USD = ? GBP): ");
+        println("[1] Auto rate (Frankfurter/ECB)");
+        println("[2] Enter rate manually");
+        println("[0] Back");
 
+        int how = readInt(sc, "Choose: ");
+        if (how == 0) return;
+
+        Double usdToGbp = null;
+        if (how ==1) {
+            usdToGbp = fetchUsdToGbpRate();
+            if (usdToGbp == null) {
+                println("Couldn't fetch live rate. Falling back to manual.");
+            } else {
+                println("Live rate: 1 USD = " + fmt(usdToGbp) + " GBP");
+            }
+        }
+
+        final double rate = usdToGbp;
         Map<Integer, Option> m = new LinkedHashMap<>();
         m.put(1, new Option("USD($) → GBP(£)", () ->
             convertLoop(sc, "USD", "GBP", v -> v * rate)
@@ -247,7 +309,7 @@ public class UnitConverter {
 
     private static void println(String s) { System.out.println(s); }
 
-    private static void convertLoop(Scanner sc, String from, String to, java.util.function.DoubleUnaryOperator op) {
+    private static void convertLoop(Scanner sc, String from, String to, DoubleUnaryOperator op) {
         while (true) {
             String raw = readLine(sc, "Enter " + from + " (or 'b' to go back): ");
             if (raw.equalsIgnoreCase("b")) return;
